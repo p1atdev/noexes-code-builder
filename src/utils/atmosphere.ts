@@ -17,21 +17,13 @@ export class CodeBlock {
     }
 }
 
-// export class CondigtionBlock {
-//     start: CodeBlock
-//     instructions: CodeBlock[] = []
-//     end: CodeBlock
-
-//     constructor(start: CodeBlock, instructions: CodeBlock[], end: CodeBlock) {
-//         this.start = start
-//         this.instructions = instructions
-//         this.end = end
-//     }
-// }
+export class ConditionBlock extends CodeBlock {
+    endBlock = new CodeType2()
+}
 
 export class CodeType2 extends CodeBlock {
     constructor() {
-        super("2", "00000000", [])
+        super("2", "0000000", [])
     }
 }
 
@@ -71,7 +63,7 @@ export interface CodeType6Options {
     baseRegister: Register
     incrementEnable: Boolean
     offsetEnable: Boolean
-    offset?: Register
+    offset?: string
     value: string
 }
 
@@ -161,12 +153,12 @@ export type KeyName =
     | "RSTICK_DOWN"
 
 export interface CodeType8Options {
-    key: KeyName
+    keys: KeyName[]
 }
 
-export class CodeType8 extends CodeBlock {
-    constructor({ key }: CodeType8Options) {
-        const keyCode = KeyCodes[key]
+export class CodeType8 extends ConditionBlock {
+    constructor({ keys }: CodeType8Options) {
+        const keyCode = keys.reduce((acc, cur) => acc + KeyCodes[cur], 0)
 
         super("8", keyCode.toString(16).padStart(7, "0"), [])
     }

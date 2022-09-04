@@ -1,12 +1,13 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
-import { Register } from "../../utils/atmosphere"
-import { convertToSXOS } from "../../utils/convert"
-import { parseNoexesCode } from "../../utils/parser"
+import { createSetter } from "../../types/setter"
+import { KeyName, Register } from "../../utils/atmosphere"
 
-interface CodeOptions {
-    noexesCode: string
+interface SetterOptions {
+    type: "key"
     register: Register
+    keys?: KeyName[]
+    value: string
 }
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -16,18 +17,16 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     const body = JSON.parse(req.body)
+    const setter: SetterOptions = body.setter
 
-    const code: CodeOptions = body.code
-
-    if (!code) {
+    if (!setter) {
         res.status(400).json({ error: "Missing value" })
         return
     }
 
-    const parsed = parseNoexesCode(code.noexesCode)
-    const converted = convertToSXOS(parsed, code.register)
-        .map((code) => code.toString())
-        .join("\n")
+    const setterBlock = createSetter({ ...setter })
 
-    res.status(200).json({ code: converted })
+    const result = setterBlock.toString()
+
+    res.status(200).json({ setter: result })
 }
