@@ -18,7 +18,7 @@ export const convertToSXOS = (code: NoexesCode, register: Register) => {
         })
     )
 
-    for (const offset of pointerOffsets) {
+    for (const offset of pointerOffsets.slice(1)) {
         sxosCode.push(
             new CodeType5({
                 width: "8",
