@@ -4,7 +4,7 @@ import { ChakraProvider } from "@chakra-ui/react"
 import Head from "next/head"
 
 const siteTitle = "Noexes Code Builder"
-const siteDescription = "Builder cheat code from your Noexes pointer!"
+const siteDescription = "Build cheat codes from your Noexes pointer!"
 const siteURL = "https://noexes.p1at.dev"
 
 function MyApp({ Component, pageProps }: AppProps) {
