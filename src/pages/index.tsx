@@ -14,12 +14,15 @@ import {
     Input,
     Select,
     Spacer,
+    Stack,
     Text,
     Textarea,
     useClipboard,
 } from "@chakra-ui/react"
 import { KeyName, Register } from "../utils/atmosphere"
 import { useState } from "react"
+import Header from "../components/Header"
+import { useCode } from "../../hooks/useCode"
 
 const Home: NextPage = () => {
     const registers: Register[] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]
@@ -62,173 +65,135 @@ const Home: NextPage = () => {
 
     const { hasCopied, onCopy } = useClipboard(result)
 
+    const { generateCode } = useCode()
+
     const onSubmit = async () => {
-        const codes: string[] = []
+        const code = generateCode(
+            codeName,
+            {
+                noexesCode,
+                register,
+            },
+            {
+                type: conditionEnabled ? "key" : "always",
+                register,
+                value: setterValue,
+                keys,
+            }
+        )
 
-        const code = await parseCode()
-
-        codes.push(code)
-
-        if (conditionEnabled) {
-            const setter = await getSetter()
-
-            codes.push(setter)
-        }
-
-        addCode(codes.join("\n"))
-    }
-
-    const parseCode = async () => {
-        const res = await fetch("/api/parse", {
-            method: "POST",
-            body: JSON.stringify({
-                code: {
-                    noexesCode,
-                    register,
-                },
-            }),
-        })
-
-        if (!res.ok) {
-            setResult("Error")
-            return
-        }
-
-        const json = await res.json()
-
-        return json.code
-    }
-
-    const getSetter = async () => {
-        const res = await fetch("/api/setter", {
-            method: "POST",
-            body: JSON.stringify({
-                setter: {
-                    type: "key",
-                    keys,
-                    value: setterValue,
-                    register,
-                },
-            }),
-        })
-
-        if (!res.ok) {
-            setResult("Error")
-            return
-        }
-
-        const json = await res.json()
-
-        return json.setter
+        addCode(code)
     }
 
     const addCode = (code: string) => {
-        setResult(result + `[${codeName}]\n${code}\n\n`)
+        setResult(result + `${code}\n\n`)
     }
 
     return (
         <Container maxW={"container.xl"} p={4}>
-            <Heading as={"h1"}>Noexes Code Builder</Heading>
+            <Header />
 
-            <Box py={4}>
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault()
-                        onSubmit()
-                    }}
-                >
-                    <FormControl>
-                        <FormLabel>Code name</FormLabel>
-                        <Input
-                            placeholder="My wonderful code"
-                            onChange={(e) => {
-                                setCodeName(e.target.value)
-                            }}
-                        />
-                    </FormControl>
+            <Stack direction={["column", "row"]} py={4} gap="4">
+                <Box>
+                    <Text fontSize="2xl" fontWeight={"bold"}>
+                        Parameters
+                    </Text>
 
-                    <HStack mt={2}>
-                        <FormLabel w={"full"}>
-                            <FormLabel>Pointer code</FormLabel>
-                            <Input
-                                placeholder="Noexes pointer here..."
-                                onChange={(e) => {
-                                    setNoexesCode(e.target.value)
-                                }}
-                            />
-                        </FormLabel>
-                        <FormLabel w={"full"}>
-                            <FormLabel>Register</FormLabel>
-                            <Select
-                                placeholder="Register to use"
-                                defaultValue={"F"}
-                                onChange={(e) => {
-                                    setRegister(e.target.value as Register)
-                                }}
-                            >
-                                {registers.map((register) => (
-                                    <option key={register} value={register}>
-                                        {register}
-                                    </option>
-                                ))}
-                            </Select>
-                        </FormLabel>
-                    </HStack>
-
-                    <Checkbox
-                        isChecked={conditionEnabled}
-                        onChange={() => {
-                            setConditionEnabled(!conditionEnabled)
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault()
+                            onSubmit()
                         }}
                     >
-                        Use condition
-                    </Checkbox>
+                        <FormControl>
+                            <FormLabel>Code name</FormLabel>
+                            <Input
+                                placeholder="My wonderful code"
+                                onChange={(e) => {
+                                    setCodeName(e.target.value)
+                                }}
+                            />
+                        </FormControl>
 
-                    <Box color={conditionEnabled ? "default" : "gray.500"}>
-                        <Text my={2} fontSize="lg">
-                            Keypress Condition
-                        </Text>
+                        <Stack direction={{ base: "column", xl: "row" }} mt={2}>
+                            <FormLabel w={"full"}>
+                                <FormLabel>Pointer code</FormLabel>
+                                <Input
+                                    placeholder="Noexes pointer here..."
+                                    onChange={(e) => {
+                                        setNoexesCode(e.target.value)
+                                    }}
+                                />
+                            </FormLabel>
+                            <FormLabel w={"full"}>
+                                <FormLabel>Register</FormLabel>
+                                <Select
+                                    placeholder="Register to use"
+                                    defaultValue={"F"}
+                                    onChange={(e) => {
+                                        setRegister(e.target.value as Register)
+                                    }}
+                                >
+                                    {registers.map((register) => (
+                                        <option key={register} value={register}>
+                                            {register}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </FormLabel>
+                        </Stack>
+
                         <FormLabel w={"full"}>
-                            <FormLabel>Value to set</FormLabel>
+                            <FormLabel>Value</FormLabel>
                             <Input
                                 placeholder="3F800000"
                                 onChange={(e) => {
                                     setSetterValue(e.target.value)
                                 }}
-                                disabled={!conditionEnabled}
                             />
                         </FormLabel>
 
-                        <FormLabel w={"full"}>
-                            <FormLabel>Key combination</FormLabel>
-                            <CheckboxGroup>
-                                {keyNames.map((key) => (
-                                    <Checkbox
-                                        key={key}
-                                        value={key}
-                                        px={3}
-                                        disabled={!conditionEnabled}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setKeys([...keys, key])
-                                            } else {
-                                                setKeys(keys.filter((k) => k !== key))
-                                            }
-                                        }}
-                                    >
-                                        {key}
-                                    </Checkbox>
-                                ))}
-                            </CheckboxGroup>
-                        </FormLabel>
-                    </Box>
+                        <Checkbox
+                            isChecked={conditionEnabled}
+                            onChange={() => {
+                                setConditionEnabled(!conditionEnabled)
+                            }}
+                        >
+                            Use keypress combination
+                        </Checkbox>
 
-                    <Button my={2} size="lg" type="submit">
-                        Generate
-                    </Button>
-                </form>
+                        <Box color={conditionEnabled ? "default" : "gray.500"}>
+                            <FormLabel w={"full"}>
+                                <FormLabel>Key combination</FormLabel>
+                                <CheckboxGroup>
+                                    {keyNames.map((key) => (
+                                        <Checkbox
+                                            key={key}
+                                            value={key}
+                                            px={3}
+                                            disabled={!conditionEnabled}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setKeys([...keys, key])
+                                                } else {
+                                                    setKeys(keys.filter((k) => k !== key))
+                                                }
+                                            }}
+                                        >
+                                            {key}
+                                        </Checkbox>
+                                    ))}
+                                </CheckboxGroup>
+                            </FormLabel>
+                        </Box>
 
-                <Box mt={4}>
+                        <Button my={2} size="lg" type="submit">
+                            Generate
+                        </Button>
+                    </form>
+                </Box>
+
+                <Box mt={4} minW={{ md: "lg" }}>
                     <Text fontSize="2xl" fontWeight={"bold"}>
                         Result
                     </Text>
@@ -252,7 +217,7 @@ const Home: NextPage = () => {
                         </Button>
                     </HStack>
                 </Box>
-            </Box>
+            </Stack>
         </Container>
     )
 }

@@ -5,13 +5,34 @@ export class Setter {
     offset: string
     value: string
 
-    condition: ConditionBlock
+    condition?: ConditionBlock
 
-    constructor(register: Register, offset: string, value: string, condition: ConditionBlock) {
+    constructor(register: Register, offset: string, value: string, condition?: ConditionBlock) {
         this.register = register
         this.offset = offset
         this.value = value
         this.condition = condition
+    }
+}
+
+export class AlwaysSetter extends Setter {
+    constructor(register: Register, offset: string = "0", value: string) {
+        super(register, offset, value)
+    }
+
+    toString() {
+        const { register, offset, value } = this
+
+        const setter = new CodeType6({
+            width: "8",
+            baseRegister: register,
+            incrementEnable: false,
+            offsetEnable: false,
+            offset: offset,
+            value,
+        }).toString()
+
+        return setter
     }
 }
 
@@ -30,9 +51,9 @@ export class KeyPressSetter extends Setter {
     toString() {
         const { register, offset, value, condition } = this
 
-        const start = condition.toString()
+        const start = condition!.toString()
 
-        const end = condition.endBlock.toString()
+        const end = condition!.endBlock.toString()
 
         const setter = new CodeType6({
             width: "8",
@@ -48,7 +69,7 @@ export class KeyPressSetter extends Setter {
 }
 
 export interface SetterOptions {
-    type: "key"
+    type: "always" | "key"
     register: Register
     value: string
     keys?: KeyName[]
@@ -56,6 +77,9 @@ export interface SetterOptions {
 
 export const createSetter = (options: SetterOptions) => {
     switch (options.type) {
+        case "always": {
+            return new AlwaysSetter(options.register, "0", options.value)
+        }
         case "key": {
             return new KeyPressSetter(options.register, "0", options.value, options.keys!)
         }
